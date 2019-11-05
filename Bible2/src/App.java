@@ -16,17 +16,25 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JComboBox;
 
-public class App {
+public class App extends JFrame{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	Connection con, conn;
+	Statement st;
 	private ResultSet rs = null;
 	private PreparedStatement pst = null;
 	private JFrame frame;
 	private JTextField textFieldVerse;
 	private JButton btnSearch;
 	private JLabel lblDisplayVerse, lblError;
-	private String input, txtFld, query1, query2, url, str;
+	private String input, txtFld, query1, query2, url, str, tableStr;
+	@SuppressWarnings("rawtypes")
+	JComboBox comboBox = new JComboBox();
 
 	/**
 	 * Launch the application.
@@ -61,12 +69,12 @@ public class App {
 		frame.getContentPane().setLayout(null);
 		
 		textFieldVerse = new JTextField();
-		textFieldVerse.setBounds(10, 50, 75, 30);
+		textFieldVerse.setBounds(10, 11, 75, 30);
 		frame.getContentPane().add(textFieldVerse);
 		textFieldVerse.setColumns(10);
 		
 		lblDisplayVerse = new JLabel();
-		lblDisplayVerse.setBounds(120, 50, 400, 80);
+		lblDisplayVerse.setBounds(120, 11, 400, 70);
 		frame.getContentPane().add(lblDisplayVerse);
 		
 		btnSearch = new JButton("Search");
@@ -82,6 +90,28 @@ public class App {
 		lblError.setBounds(120, 140, 200, 20);
 		frame.getContentPane().add(lblError);
 		
+		
+		comboBox.addActionListener(new ActionListener() {
+			@SuppressWarnings("unchecked")
+			public void actionPerformed(ActionEvent e) {
+				try {
+					con = DriverManager.getConnection("jdbc:sqlite:C:\\\\\\\\Users\\\\\\\\alext\\\\\\\\git\\\\\\\\BibleApp\\\\\\\\Bible2\\\\\\\\BibleDB.db");
+				      st = con.createStatement();
+				      String s = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';";
+				      rs = st.executeQuery(s);
+				        while(rs.next())
+				        {
+				            comboBox.addItem(rs.getString(1)+" === "+rs.getString(2));
+				        }
+				}
+				catch(Exception e2){
+					e2.printStackTrace();
+				}
+			}
+		});
+		comboBox.setBounds(120, 100, 75, 30);
+		frame.getContentPane().add(comboBox);
+		
 		JMenuBar menuBar = new JMenuBar();
 		frame.setJMenuBar(menuBar);
 		
@@ -92,7 +122,6 @@ public class App {
 		mntmCreateNewTab.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// SQLite connection string
-		        //url = "jdbc:sqlite:C:\\\\Eclipse\\\\Programs\\\\Bible2\\\\BibleDB.db";
 		        url = "jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db";
 		        input = JOptionPane.showInputDialog("Enter name of new Tab");
 		        if(input.isEmpty()) {
@@ -118,8 +147,25 @@ public class App {
 		mntmDeleteTab.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// SQLite connection string
-		        url = "jdbc:sqlite:C:\\\\Eclipse\\\\Programs\\\\Bible2\\\\BibleDB.db";
-		        input = JOptionPane.showInputDialog("Select Tab to delete");
+				url = "jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db";
+				query1 = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';";	
+				try {
+					pst = con.prepareStatement(query1);
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				try {
+					rs = pst.executeQuery();
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+				try {
+					tableStr = rs.getString("field2");
+				} catch (SQLException e1) {
+					e1.printStackTrace();
+				}
+		        //input = JOptionPane.showInputDialog("Select Tab to delete");
+				Object selectedTable = JOptionPane.showInputDialog(null, "Choose a Table");
 			}
 		});
 		mnNewTable.add(mntmDeleteTab);
@@ -128,7 +174,7 @@ public class App {
 	public void fetch() {
 		try {
 			txtFld = textFieldVerse.getText().toLowerCase();
-			con = DriverManager.getConnection("jdbc:sqlite:C:\\\\Eclipse\\\\Programs\\\\Bible2\\\\BibleDB.db");
+			con = DriverManager.getConnection("jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db");
 			query1 = "SELECT field2 "
 					+ "FROM Bible "
 					+ "WHERE field1 like '"+txtFld+"' ";	
