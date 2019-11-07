@@ -8,15 +8,17 @@ import java.sql.Statement;
 
 import javax.swing.JFrame;
 import javax.swing.JTextField;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
+
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JComboBox;
 
 public class App extends JFrame{
 
@@ -32,9 +34,9 @@ public class App extends JFrame{
 	private JTextField textFieldVerse;
 	private JButton btnSearch;
 	private JLabel lblDisplayVerse, lblError;
-	private String input, txtFld, query1, query2, url, str, tableStr;
+	private String input, txtFld, query1, query2, url, str, sql;
 	@SuppressWarnings("rawtypes")
-	JComboBox comboBox = new JComboBox();
+	JComboBox comboBox;
 
 	/**
 	 * Launch the application.
@@ -55,13 +57,15 @@ public class App extends JFrame{
 	/**
 	 * Create the application.
 	 */
-	public App() {
+	public App() {		
 		initialize();
+		comboBox();
 	}
-
+		
 	/**
 	 * Initialize the contents of the frame.
 	 */
+	@SuppressWarnings("rawtypes")
 	private void initialize() {
 		frame = new JFrame();
 		frame.setBounds(100, 100, 550, 450);
@@ -69,12 +73,12 @@ public class App extends JFrame{
 		frame.getContentPane().setLayout(null);
 		
 		textFieldVerse = new JTextField();
-		textFieldVerse.setBounds(10, 11, 75, 30);
+		textFieldVerse.setBounds(10, 10, 75, 30);
 		frame.getContentPane().add(textFieldVerse);
 		textFieldVerse.setColumns(10);
 		
 		lblDisplayVerse = new JLabel();
-		lblDisplayVerse.setBounds(120, 11, 400, 70);
+		lblDisplayVerse.setBounds(120, 10, 400, 70);
 		frame.getContentPane().add(lblDisplayVerse);
 		
 		btnSearch = new JButton("Search");
@@ -83,33 +87,19 @@ public class App extends JFrame{
 				fetch();
 			}
 		});
-		btnSearch.setBounds(10, 100, 75, 30);
+		btnSearch.setBounds(10, 70, 75, 30);
 		frame.getContentPane().add(btnSearch);
 		
 		lblError = new JLabel();
-		lblError.setBounds(120, 140, 200, 20);
+		lblError.setBounds(120, 130, 300, 30);
 		frame.getContentPane().add(lblError);
-		
-		
+				
+		comboBox = new JComboBox();
 		comboBox.addActionListener(new ActionListener() {
-			@SuppressWarnings("unchecked")
 			public void actionPerformed(ActionEvent e) {
-				try {
-					con = DriverManager.getConnection("jdbc:sqlite:C:\\\\\\\\Users\\\\\\\\alext\\\\\\\\git\\\\\\\\BibleApp\\\\\\\\Bible2\\\\\\\\BibleDB.db");
-				      st = con.createStatement();
-				      String s = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';";
-				      rs = st.executeQuery(s);
-				        while(rs.next())
-				        {
-				            comboBox.addItem(rs.getString(1)+" === "+rs.getString(2));
-				        }
-				}
-				catch(Exception e2){
-					e2.printStackTrace();
-				}
 			}
 		});
-		comboBox.setBounds(120, 100, 75, 30);
+		comboBox.setBounds(10, 130, 75, 30);
 		frame.getContentPane().add(comboBox);
 		
 		JMenuBar menuBar = new JMenuBar();
@@ -134,6 +124,7 @@ public class App extends JFrame{
 			                Statement stmt = conn.createStatement()) {
 			            // create a new table
 			            stmt.execute(query2);
+			            lblError.setText("New Tab Was Successfully Created");
 			        } catch (SQLException ee) {
 			            System.out.println(ee.getMessage());
 			            lblError.setText("Couldn't Create New Tab");
@@ -147,25 +138,24 @@ public class App extends JFrame{
 		mntmDeleteTab.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// SQLite connection string
-				url = "jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db";
-				query1 = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%';";	
-				try {
-					pst = con.prepareStatement(query1);
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-				try {
-					rs = pst.executeQuery();
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-				try {
-					tableStr = rs.getString("field2");
-				} catch (SQLException e1) {
-					e1.printStackTrace();
-				}
-		        //input = JOptionPane.showInputDialog("Select Tab to delete");
-				Object selectedTable = JOptionPane.showInputDialog(null, "Choose a Table");
+		        url = "jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db";
+		        input = JOptionPane.showInputDialog("Enter name of Tab");
+		        if(input.isEmpty()) {
+		        	lblError.setText("You didn't enter anything");
+		        }
+		        else {
+		        	// SQL statement for creating a new table
+			        query2 = "DROP TABLE '"+input+"'";	        
+			        try (Connection conn = DriverManager.getConnection(url);
+			                Statement stmt = conn.createStatement()) {
+			            // delete table
+			            stmt.execute(query2);
+			            lblError.setText("Tab Was Successfully Deleted");
+			        } catch (SQLException ee) {
+			            System.out.println(ee.getMessage());
+			            lblError.setText("Couldn't Delete Tab");
+			        }			        	
+		        }					
 			}
 		});
 		mnNewTable.add(mntmDeleteTab);
@@ -185,6 +175,24 @@ public class App extends JFrame{
 			lblDisplayVerse.setText("<html> "+str+"</html>");		}
 		catch(Exception e) {
 			lblError.setText("No Such Result");
+		}
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public void comboBox() {
+		try {			
+			con = DriverManager.getConnection("jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db");
+			String sql = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'Bible';";
+			pst = con.prepareStatement(sql);
+			rs = pst.executeQuery();
+						
+			while (rs.next()) {
+					String table = rs.getString("name");
+					comboBox.addItem(table);
+			}			
+		}
+		catch (Exception ee3){
+			JOptionPane.showMessageDialog(null, ee3);
 		}
 	}
 }
