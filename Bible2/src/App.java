@@ -5,14 +5,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-
 import javax.swing.JFrame;
 import javax.swing.JTextField;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JMenuBar;
@@ -34,7 +31,9 @@ public class App extends JFrame{
 	private JTextField textFieldVerse;
 	private JButton btnSearch;
 	private JLabel lblDisplayVerse, lblError;
-	private String input, txtFld, query1, query2, url, str, sql;
+	private String input, txtFld, query1, query2, url, str, output;
+	JMenuItem mntmRenameTab, mntmCreateNewTab, mntmDeleteTab;
+	
 	@SuppressWarnings("rawtypes")
 	JComboBox comboBox;
 
@@ -59,7 +58,7 @@ public class App extends JFrame{
 	 */
 	public App() {		
 		initialize();
-		comboBox();
+		comBoBox();
 	}
 		
 	/**
@@ -108,7 +107,8 @@ public class App extends JFrame{
 		JMenu mnNewTable = new JMenu("Tabs");
 		menuBar.add(mnNewTable);
 		
-		JMenuItem mntmCreateNewTab = new JMenuItem("Create New Tab");
+		// create new tab
+		mntmCreateNewTab = new JMenuItem("Create New Tab");
 		mntmCreateNewTab.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// SQLite connection string
@@ -134,7 +134,8 @@ public class App extends JFrame{
 		});
 		mnNewTable.add(mntmCreateNewTab);
 		
-		JMenuItem mntmDeleteTab = new JMenuItem("Delete Tab");
+		// delete tab
+		mntmDeleteTab = new JMenuItem("Delete Tab");
 		mntmDeleteTab.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				// SQLite connection string
@@ -159,8 +160,37 @@ public class App extends JFrame{
 			}
 		});
 		mnNewTable.add(mntmDeleteTab);
+		
+		// rename tab
+		mntmRenameTab = new JMenuItem("Rename Tab");
+		mntmRenameTab.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				// SQLite connection string
+		        url = "jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db";
+		        input = JOptionPane.showInputDialog("Enter name of Tab that you want to rename");
+		        output = JOptionPane.showInputDialog("Enter new name for Tab");
+		        if(input.isEmpty()) {
+		        	lblError.setText("You didn't enter anything");
+		        }
+		        else {
+		        	// SQL statement for renaming tab
+			        query2 = "ALTER TABLE '"+input+"' RENAME to '"+output+"'";	        
+			        try (Connection conn = DriverManager.getConnection(url);
+			                Statement stmt = conn.createStatement()) {
+			            // rename table
+			            stmt.execute(query2);
+			            lblError.setText("Tab Was Successfully Renamed");
+			        } catch (SQLException ee) {
+			            System.out.println(ee.getMessage());
+			            lblError.setText("Couldn't Rename Tab");
+			        }			        	
+		        }
+			}
+		});
+		mnNewTable.add(mntmRenameTab);
 	}
 	
+	// display contents
 	public void fetch() {
 		try {
 			txtFld = textFieldVerse.getText().toLowerCase();
@@ -178,8 +208,9 @@ public class App extends JFrame{
 		}
 	}
 	
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void comboBox() {
+	// comboBox to show existing tabs
+	@SuppressWarnings({ "unchecked" })
+	public void comBoBox() {
 		try {			
 			con = DriverManager.getConnection("jdbc:sqlite:C:\\\\Users\\\\alext\\\\git\\\\BibleApp\\\\Bible2\\\\BibleDB.db");
 			String sql = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'Bible';";
